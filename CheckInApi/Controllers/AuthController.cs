@@ -31,18 +31,36 @@ namespace CheckInApi.Controllers
 
             return Ok("Registered successfully");
         }
+
+
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginDto logindata)
+        public IActionResult Login(LoginDto logindata)
         {
             var data = _userDbContext.Usersdata
                 .FirstOrDefault(u => u.Email == logindata.Email && u.Password == logindata.Password);
 
             if (data == null)
             {
-                return Unauthorized("Invalid email or password");
+                return Unauthorized(new
+                {
+                    status = "error",
+                    message = "Invalid email or password"
+                });
             }
 
-            return Ok("Login successful");
+            return Ok(new
+            {
+                status = "success",
+                message = "Login successful",
+                user = new
+                {
+                    
+                    
+                    email = data.Email,
+                    password = data.Password
+                    // add other fields if needed
+                }
+            });
         }
 
     }
