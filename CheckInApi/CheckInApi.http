@@ -1,0 +1,6 @@
+@CheckInApi_HostAddress = http://localhost:5113
+
+GET {{CheckInApi_HostAddress}}/AuthController/
+Accept: application/json
+
+###
