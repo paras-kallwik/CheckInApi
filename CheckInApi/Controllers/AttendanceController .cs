@@ -21,7 +21,7 @@ namespace CheckInApi.Controllers
             var user = _context.Usersdata.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
 
             if (user == null)
-                return NotFound("User not found");
+                return NotFound("User not found!");
 
             var today = DateTime.Now.Date;
 

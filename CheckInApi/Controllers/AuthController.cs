@@ -1,4 +1,5 @@
 ﻿using CheckInApi.Model;
+using CheckInApi.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CheckInApi.Controllers
@@ -7,27 +8,25 @@ namespace CheckInApi.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserDbContext _userDbContext;
+        private readonly IAuthService _authService;
 
-        public AuthController(UserDbContext userDbContext)
+        public AuthController(IAuthService authservice)
         {
-            _userDbContext = userDbContext;
+            _authService = authservice;
         }
 
         // POST: api/auth/register
         [HttpPost("register")]
-        public IActionResult Registration([FromBody] UserData userData)
+        public IActionResult Register([FromBody] UserData userData)
         {
             // Ensure Id is not set explicitly
             userData.Id = 0;
+            var result=_authService.RegistrationUser(userData);
 
-            if (_userDbContext.Usersdata.Any(u => u.Email == userData.Email))
+            if (!result)
             {
                 return BadRequest("Email already exists");
             }
-
-            _userDbContext.Usersdata.Add(userData);
-            _userDbContext.SaveChanges();
 
             return Ok("Registered successfully");
         }
@@ -36,8 +35,8 @@ namespace CheckInApi.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginDto logindata)
         {
-            var data = _userDbContext.Usersdata
-                .FirstOrDefault(u => u.Email == logindata.Email && u.Password == logindata.Password);
+            var data = _authService.LoginUser(logindata);
+               
 
             if (data == null)
             {

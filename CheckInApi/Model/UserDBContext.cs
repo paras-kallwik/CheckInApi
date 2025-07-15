@@ -7,4 +7,5 @@ public class UserDbContext : DbContext
     public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }
 
     public DbSet<UserData> Usersdata { get; set; }
+    public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
 }
