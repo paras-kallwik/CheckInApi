@@ -5,7 +5,7 @@
 namespace CheckInApi.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUserIdToAttendanceRecords : Migration
+    public partial class firstcreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
