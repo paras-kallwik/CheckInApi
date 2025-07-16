@@ -18,18 +18,46 @@ namespace CheckInApi.Controllers
         [HttpPost("checkin")]
         public IActionResult MarkInAttendance([FromBody] string email)
         {
-            var user = _context.Usersdata.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+            return MarkAttendance(email, "CheckIn");
+        }
 
+        [HttpPost("checkout")]
+        public IActionResult MarkOutAttendance([FromBody] string email)
+        {
+            return MarkAttendance(email, "CheckOut");
+        }
+
+        // ✅ Common reusable method
+        private IActionResult MarkAttendance(string email, string status)
+        {
+            var user = _context.Usersdata.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
             if (user == null)
                 return NotFound("User not found!");
 
             var today = DateTime.Now.Date;
 
-            var alreadyMarked = _context.AttendanceRecords
-                .Any(a => a.UserId == user.Id && a.Date == today);
+            if (status == "CheckIn")
+            {
+                var alreadyMarked = _context.AttendanceRecords
+                    .Any(a => a.UserId == user.Id && a.Date == today && a.Status == "CheckIn");
 
-            if (alreadyMarked)
-                return BadRequest("Attendance already marked for today.");
+                if (alreadyMarked)
+                    return BadRequest("Already checked in for today.");
+            }
+            else if (status == "CheckOut")
+            {
+                var checkInRecord = _context.AttendanceRecords
+                    .FirstOrDefault(a => a.UserId == user.Id && a.Date == today && a.Status == "CheckIn");
+
+                if (checkInRecord == null)
+                    return BadRequest("You haven't checked in yet today.");
+
+                var alreadyCheckedOut = _context.AttendanceRecords
+                    .Any(a => a.UserId == user.Id && a.Date == today && a.Status == "CheckOut");
+
+                if (alreadyCheckedOut)
+                    return BadRequest("You have already checked out for today.");
+            }
 
             var record = new AttendanceRecord
             {
@@ -37,7 +65,7 @@ namespace CheckInApi.Controllers
                 Email = user.Email,
                 Date = today,
                 Time = DateTime.Now.TimeOfDay,
-                Status = "CheckIn"
+                Status = status
             };
 
             _context.AttendanceRecords.Add(record);
@@ -45,84 +73,15 @@ namespace CheckInApi.Controllers
 
             return Ok(new
             {
-                message = "Attendance marked successfully",
+                message = $"Successfully marked {status}",
                 user = $"{user.Fname} {user.Lname}",
                 email = user.Email,
                 date = record.Date.ToShortDateString(),
-                time = record.Time.ToString(),
+                time = record.Time.ToString(@"hh\:mm\:ss"),
                 status = record.Status
             });
         }
-
-        [HttpPost("checkout")]
-        public IActionResult MarkOutAttendance([FromBody] string email)
-        {
-            var user = _context.Usersdata.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
-            if (user == null)
-                return NotFound("User not found!");
-
-            var today = DateTime.Now.Date;
-
-            // Check if already checked in today
-            var checkInRecord = _context.AttendanceRecords
-                .FirstOrDefault(a => a.UserId == user.Id && a.Date == today && a.Status == "CheckIn");
-
-            if (checkInRecord == null)
-                return BadRequest("You haven't checked in yet today.");
-
-            // Check if already checked out
-            var alreadyCheckedOut = _context.AttendanceRecords
-                .Any(a => a.UserId == user.Id && a.Date == today && a.Status == "CheckOut");
-
-            if (alreadyCheckedOut)
-                return BadRequest("You have already checked out for today.");
-
-            // Proceed with Check-Out
-            var checkOutRecord = new AttendanceRecord
-            {
-                UserId = user.Id,
-                Email = user.Email,
-                Date = today,
-                Time = DateTime.Now.TimeOfDay,
-                Status = "CheckOut"
-            };
-
-            _context.AttendanceRecords.Add(checkOutRecord);
-            _context.SaveChanges();
-
-            return Ok(new
-            {
-                message = "Checked Out Successfully!",
-                user = $"{user.Fname} {user.Lname}",
-                email = user.Email,
-                date = checkOutRecord.Date.ToShortDateString(),
-                time = checkOutRecord.Time.ToString(@"hh\:mm\:ss"),
-                status = checkOutRecord.Status
-            });
-        }
-
-        [HttpGet("{email}")]
-        public IActionResult GetAttendance(string email)
-        {
-            var records = _context.AttendanceRecords
-                .Include(a => a.User)  // Include user navigation property
-                .Where(a => a.User.Email == email)
-                .OrderByDescending(a => a.Date)
-                .Select(a => new
-                {
-                    a.Date,
-                    a.Time,
-                    a.Status,
-                    UserEmail = a.User.Email,
-                    UserName = a.User.Fname + " " + a.User.Lname
-                })
-                .ToList();
-
-            if (records == null || records.Count == 0)
-                return NotFound("No attendance records found for this email.");
-
-            return Ok(records);
-        }
-
     }
 }
+
+    
