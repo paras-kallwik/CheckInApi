@@ -1,11 +1,12 @@
-﻿using CheckInApi.Model;
+﻿using CheckInApi.AuthRepository;
+using CheckInApi.Model;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Identity.Client;
 using System.Diagnostics.Eventing.Reader;
 
 namespace CheckInApi.Repository
 {
-    public class AuthRepository :IAuthRepo
+    public class AuthRepository : IAuthRepository
     {
         private readonly UserDbContext _userDbContext;
         public AuthRepository(UserDbContext userDbContext)

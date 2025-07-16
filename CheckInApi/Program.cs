@@ -1,4 +1,7 @@
-﻿using CheckInApi.Model;
+﻿using CheckInApi.AuthRepository;
+using CheckInApi.Model;
+using CheckInApi.Repository;
+using CheckInApi.Service;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +14,8 @@ builder.Services.AddSwaggerGen();
 // 📦 Register DbContext
 builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Dbcs")));
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 // 🌐 Add CORS service
 builder.Services.AddCors(options =>

@@ -3,7 +3,7 @@ using CheckInApi.Model;
 
 namespace CheckInApi.Service
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
         public AuthService(IAuthRepository authRepository)
@@ -18,7 +18,7 @@ namespace CheckInApi.Service
             }
           return _authRepository.Registration(userData);
         }
-        public UserData Login(LoginDto loginDto)
+        public UserData LoginUser(LoginDto loginDto)
         {
             if (loginDto==null)
             {
