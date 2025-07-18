@@ -26,7 +26,7 @@ namespace CheckInApi.Controllers
                 PartitionKey = email.ToLower(),
                 RowKey = $"{today:yyyyMMdd}-{status}",
                 Date = today,
-                Time = now,
+                Time = DateTime.Now,
                 Status = status,
             };
 

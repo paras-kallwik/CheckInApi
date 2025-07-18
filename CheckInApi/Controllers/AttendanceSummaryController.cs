@@ -1,5 +1,4 @@
-﻿using Azure;
-using Azure.Data.Tables;
+﻿using Azure.Data.Tables;
 using CheckInApi.Model;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,35 +8,33 @@ namespace CheckInApi.Controllers
     [Route("api/[controller]")]
     public class AttendanceSummaryController : ControllerBase
     {
-        private readonly UserDbContext _userDbContext;
-        private readonly IConfiguration _configuration;
+        private readonly TableClient _attendanceTable;
 
-        public AttendanceSummaryController(UserDbContext userDbContext, IConfiguration configuration)
+        public AttendanceSummaryController(IConfiguration configuration)
         {
-            _userDbContext = userDbContext;
-            _configuration = configuration;
+            string connectionString = configuration["AzureTableStorage:ConnectionString"];
+            _attendanceTable = new TableClient(connectionString, "AttendanceRecords");
         }
 
         [HttpGet("get-attendance")]
         public IActionResult GetAttendanceSummary([FromQuery] string email)
         {
-            var user = _userDbContext.Usersdata.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
-            if (user == null)
-                return NotFound("User not found!");
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("Email is required");
 
-            string connectionString = _configuration.GetConnectionString("AzureTableStorage");
-            string tableName = "Attendance";
+            // Get records where PartitionKey == email
+            var records = _attendanceTable
+                .Query<AttendanceRecord>(r => r.PartitionKey == email.ToLower())
+                .ToList();
 
-            var tableClient = new TableClient(connectionString, tableName);
-
-            // Fetch all attendance records for the user from Table Storage
-            var records = tableClient.Query<AttendanceRecord>(r => r.PartitionKey == user.PartitionKey.ToString()).ToList();
+            if (records == null || records.Count == 0)
+                return NotFound("No attendance records found for this email.");
 
             var attendanceSummaries = records
-                .GroupBy(r => r.Date.Date) // Group by date only (ignore time)
+                .GroupBy(r => r.Date.Date)
                 .Select(g => new AttendanceSummaryDto
                 {
-                    Email = user.Email,
+                    Email = email.ToLower(),
                     Date = g.Key,
                     CheckInTime = g.FirstOrDefault(x => x.Status == "CheckIn")?.Time.ToString(@"hh\:mm\:ss"),
                     CheckOutTime = g.FirstOrDefault(x => x.Status == "CheckOut")?.Time.ToString(@"hh\:mm\:ss")

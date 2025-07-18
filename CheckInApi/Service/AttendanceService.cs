@@ -21,7 +21,7 @@ namespace CheckInApi.Service
 
         public async Task<string> MarkAttendanceAsync(string email, string status)
         {
-            var userResponse = await _userTable.GetEntityIfExistsAsync<UserData>("User", email.ToLower());
+            var userResponse = await _userTable.GetEntityIfExistsAsync<UserData>("users", email.ToLower());
             if (!userResponse.HasValue)
                 return "User not found!";
 
@@ -54,12 +54,13 @@ namespace CheckInApi.Service
                 RowKey = rowKey,
                 Email = email,
                 Date = today,
-                Time = DateTime.UtcNow.TimeOfDay,
+                Time = DateTime.UtcNow,
                 Status = status
             };
 
             await _attendanceTable.AddEntityAsync(record);
-            return $"Successfully marked {status} at {record.Time.ToString(@"hh\:mm\:ss")}";
+            return $"Successfully marked {status} at {record.Time.ToLocalTime():HH:mm:ss}";
+
         }
     }
 }
