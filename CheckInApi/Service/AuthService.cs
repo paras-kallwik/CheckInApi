@@ -6,27 +6,20 @@ namespace CheckInApi.Service
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
+
         public AuthService(IAuthRepository authRepository)
         {
-            _authRepository=authRepository;
-        }
-        public bool RegistrationUser(UserData userData)
-        {
-            if (userData==null)
-            {
-                Console.WriteLine("Userdata does not Contain");
-            }
-          return _authRepository.Registration(userData);
-        }
-        public UserData LoginUser(LoginDto loginDto)
-        {
-            if (loginDto==null)
-            {
-                Console.WriteLine("logindto does not Contain");
-            }
-            return _authRepository.Login(loginDto);
+            _authRepository = authRepository;
         }
 
+        public async Task<bool> RegistrationUserAsync(UserData userData)
+        {
+            return await _authRepository.RegistrationAsync(userData);
+        }
 
+        public async Task<UserData?> LoginUserAsync(LoginDto loginDto)
+        {
+            return await _authRepository.LoginAsync(loginDto);
+        }
     }
 }

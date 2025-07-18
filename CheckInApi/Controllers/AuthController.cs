@@ -10,35 +10,33 @@ namespace CheckInApi.Controllers
     {
         private readonly IAuthService _authService;
 
-        public AuthController(IAuthService authservice)
+        public AuthController(IAuthService authService)
         {
-            _authService = authservice;
+            _authService = authService;
         }
 
-        // POST: api/auth/register
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserData userData)
+        public async Task<IActionResult> Register([FromBody] UserData userData)
         {
-            // Ensure Id is not set explicitly
-            userData.Id = 0;
-            var result=_authService.RegistrationUser(userData);
+            if (!ModelState.IsValid) return BadRequest("Invalid user data");
 
-            if (!result)
+            var result = await _authService.RegistrationUserAsync(userData);
+            if (!result) return BadRequest("Email already exists");
+
+            return Ok(new
             {
-                return BadRequest("Email already exists");
-            }
-
-            return Ok("Registered successfully");
+                status = "success",
+                message = "Registered successfully"
+            });
         }
-
 
         [HttpPost("login")]
-        public IActionResult Login(LoginDto logindata)
+        public async Task<IActionResult> Login([FromBody] LoginDto logindata)
         {
-            var data = _authService.LoginUser(logindata);
-               
+            if (!ModelState.IsValid) return BadRequest("Invalid credentials");
 
-            if (data == null)
+            var user = await _authService.LoginUserAsync(logindata);
+            if (user == null)
             {
                 return Unauthorized(new
                 {
@@ -53,14 +51,12 @@ namespace CheckInApi.Controllers
                 message = "Login successful",
                 user = new
                 {
-                    
-                    
-                    email = data.Email,
-                    password = data.Password
-                    // add other fields if needed
+                    fname = user.Fname,
+                    lname = user.Lname,
+                    email = user.Email,
+                    phone = user.Phone
                 }
             });
         }
-
     }
 }

@@ -1,36 +1,68 @@
-﻿using CheckInApi.AuthRepository;
+﻿using Azure.Data.Tables;
 using CheckInApi.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Identity.Client;
-using System.Diagnostics.Eventing.Reader;
 
-namespace CheckInApi.Repository
+namespace CheckInApi.AuthRepository
 {
     public class AuthRepository : IAuthRepository
     {
-        private readonly UserDbContext _userDbContext;
-        public AuthRepository(UserDbContext userDbContext)
+        private readonly TableClient _userTable;
+
+        public AuthRepository(TableServiceClient tableServiceClient)
         {
-            _userDbContext = userDbContext;
+            _userTable = tableServiceClient.GetTableClient("UserData");
+            _userTable.CreateIfNotExists();
         }
-        public bool  Registration(UserData userData)
+
+        public async Task<bool> RegistrationAsync(UserData userData)
         {
-            if (_userDbContext.Usersdata.Any(x=>x.Email==userData.Email))
+            // Set PartitionKey and RowKey properly
+            userData.PartitionKey = "users";
+            userData.RowKey = userData.Email.ToLower().Trim();
+
+            // Check if user already exists
+            await foreach (var existingUser in _userTable.QueryAsync<UserData>(
+                u => u.PartitionKey == userData.PartitionKey && u.RowKey == userData.RowKey))
             {
-               return false;
+                return false; // User already exists
             }
-            else
+
+            // Insert new user
+            await _userTable.AddEntityAsync(userData);
+            return true;
+        }
+
+
+
+        public async Task<UserData?> LoginAsync(LoginDto loginDto)
+        {
+            try
             {
-                _userDbContext.Usersdata.Add(userData);
-                _userDbContext.SaveChanges();
-                return true;
+                string partitionKey = "users";
+                string rowKey = loginDto.Email.ToLower().Trim();
+
+                var response = await _userTable.GetEntityAsync<UserData>(partitionKey, rowKey);
+
+                if (response.Value.Password == loginDto.Password)
+                {
+                    return response.Value;
+                }
+
+                return null; // Password doesn't match
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                // User not found
+                Console.WriteLine("Login failed: User not found.");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Login failed: {ex.Message}");
+                return null;
             }
         }
 
-        public UserData Login(LoginDto loginDto)
-        {
-            return _userDbContext.Usersdata
-                .FirstOrDefault(x => x.Email == loginDto.Email && x.Password == loginDto.Password);
-        }
+
+
     }
 }

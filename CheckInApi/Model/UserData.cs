@@ -1,27 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Azure;
+using Azure.Data.Tables;
+using System;
 
 namespace CheckInApi.Model
 {
-    public class UserData
+    public class UserData : ITableEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public string PartitionKey { get; set; } = "users";  // Common partition
+        public string RowKey { get; set; }                   // We'll use email as RowKey
+        public DateTimeOffset? Timestamp { get; set; }
+        public ETag ETag { get; set; }
 
-        [Required, MaxLength(50)]
+        // Custom properties
         public string Fname { get; set; }
-
-        [Required, MaxLength(50)]
         public string Lname { get; set; }
-
-        [Required]
-        public string Email { get; set; }
-
-        [Required]
+        public string Email { get; set; }  // duplicate of RowKey, but convenient
         public string Phone { get; set; }
-
-        [Required]
         public string Password { get; set; }
+
+        // Optional: Full Name
+        public string Name => $"{Fname} {Lname}";
     }
 }

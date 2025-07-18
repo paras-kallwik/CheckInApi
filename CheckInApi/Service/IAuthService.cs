@@ -4,8 +4,7 @@ namespace CheckInApi.Service
 {
     public interface IAuthService
     {
-        public bool RegistrationUser(UserData userData);
-        public UserData LoginUser(LoginDto loginDto);
-
+        Task<bool> RegistrationUserAsync(UserData userData);
+        Task<UserData?> LoginUserAsync(LoginDto loginDto);
     }
 }
