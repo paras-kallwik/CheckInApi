@@ -1,8 +1,6 @@
-﻿using CheckInApi.AuthRepository;
-using CheckInApi.Model;
-using CheckInApi.Repository;
+﻿using Azure.Data.Tables;
+using CheckInApi.AuthRepository;
 using CheckInApi.Service;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,11 +9,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 📦 Register DbContext
-builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Dbcs")));
-builder.Services.AddScoped<IAuthService, AuthService>();
+// ✅ Add Azure Table Storage client
+builder.Services.AddSingleton<TableServiceClient>(provider =>
+{
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var connectionString = configuration.GetValue<string>("AzureTableStorage:ConnectionString");
+    return new TableServiceClient(connectionString);
+});
+
+// 🔁 Register Repositories and Services
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>(); // ✅ Registered here
 
 // 🌐 Add CORS service
 builder.Services.AddCors(options =>
@@ -40,7 +45,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ✅ Enable CORS before other middlewares that use it
 app.UseCors("AllowAll");
 
 app.UseAuthorization();

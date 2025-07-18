@@ -1,31 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Azure;
+using Azure.Data.Tables;
 
 namespace CheckInApi.Model
 {
-    public class AttendanceRecord
+    public class AttendanceRecord : ITableEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        // Required by Azure Table Storage
+        public string PartitionKey { get; set; } // e.g., email
+        public string RowKey { get; set; }        // e.g., 20250715-CheckIn
+        public DateTimeOffset? Timestamp { get; set; } = DateTime.Now;
+        public ETag ETag { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
-
-        [ForeignKey("UserId")]
-        public UserData User { get; set; }  // navigation
-        [Required]
+        // Your custom fields
         public string Email { get; set; }
-
-
-        [Required]
-        public DateTime Date { get; set; } = DateTime.Now.Date;
-
-        [Required]
-        public TimeSpan Time { get; set; } = DateTime.Now.TimeOfDay;
-
-        [Required]
-        public string Status { get; set; }  // Present/Absent
+        public int UserId { get; set; }
+        public DateTime Date { get; set; } = DateTime.UtcNow.Date;
+        public DateTime Time { get; set; } = DateTime.Now;
+        public string Status { get; set; }  // CheckIn / CheckOut
     }
-
 }
